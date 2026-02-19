@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL + TimescaleDB (extension séries temporelles)
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: earthen-db
+    environment:
+      POSTGRES_DB: smartearthen_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: earthen2024
+    ports:
+      - "5432:5432"
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - earthen-net
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: earthen-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - earthen-net
+
+  # MQTT Broker — Eclipse Mosquitto
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: earthen-mqtt
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # WebSocket MQTT
+    volumes:
+      - ./iot/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt_data:/mosquitto/data
+    networks:
+      - earthen-net
+
+  # Backend Spring Boot
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: earthen-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smartearthen_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: earthen2024
+      SPRING_DATA_REDIS_HOST: redis
+      MQTT_BROKER_URL: tcp://mqtt:1883
+    depends_on:
+      - postgres
+      - redis
+      - mqtt
+    networks:
+      - earthen-net
+
+  # Frontend Angular (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: earthen-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - earthen-net
+
+  # Jupyter Notebook pour les modèles IA
+  jupyter:
+    image: jupyter/tensorflow-notebook:latest
+    container_name: earthen-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./ml:/home/jovyan/work
+    networks:
+      - earthen-net
+
+volumes:
+  postgres_data:
+  mqtt_data:
+
+networks:
+  earthen-net:
+    driver: bridge

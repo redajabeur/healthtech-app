@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Earthen Buildings — IoT Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Outfit:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --earth-deep: #1a1108;
+    --earth-dark: #231a0d;
+    --earth-mid: #2e2010;
+    --earth-warm: #3d2c14;
+    --terracotta: #c4622d;
+    --terracotta-light: #e07a45;
+    --amber: #d4943a;
+    --amber-light: #f0b050;
+    --sage: #5a8a5e;
+    --sage-light: #7ab87e;
+    --clay: #a07850;
+    --clay-light: #c49a6c;
+    --sand: #e8d5a3;
+    --sand-muted: #b8a878;
+    --danger: #e05555;
+    --warning: #e09030;
+    --ok: #5aaa5e;
+    --border: rgba(196,98,45,0.15);
+    --glow-terra: rgba(196,98,45,0.2);
+    --glow-amber: rgba(212,148,58,0.2);
+    --glow-sage: rgba(90,138,94,0.2);
+    --text: #f0e8d0;
+    --muted: #8a7055;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--earth-deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Organic texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 80%, rgba(196,98,45,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 20%, rgba(90,138,94,0.05) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 256px;
+    background: var(--earth-dark);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(180deg, transparent 0%, var(--terracotta) 40%, var(--amber) 70%, transparent 100%);
+    opacity: 0.25;
+  }
+
+  .logo {
+    padding: 28px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--terracotta), var(--amber));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 16px var(--glow-terra);
+  }
+
+  .logo-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--sand);
+  }
+
+  .logo-name span { color: var(--terracotta-light); }
+  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'Fira Code', monospace; }
+
+  .nav-section { padding: 16px 0 8px; }
+
+  .nav-label {
+    padding: 0 24px 8px;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-family: 'Fira Code', monospace;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    font-size: 14px;
+    color: var(--muted);
+    border-left: 2px solid transparent;
+  }
+
+  .nav-item:hover { color: var(--sand); background: rgba(196,98,45,0.06); }
+
+  .nav-item.active {
+    color: var(--terracotta-light);
+    background: rgba(196,98,45,0.1);
+    border-left-color: var(--terracotta);
+  }
+
+  .nav-item .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+
+  .alert-badge {
+    margin-left: auto;
+    background: var(--danger);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Fira Code', monospace;
+    animation: pulseBadge 2s infinite;
+  }
+
+  @keyframes pulseBadge {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .nav-spacer { flex: 1; }
+
+  .system-status {
+    padding: 16px;
+    margin: 0 12px 16px;
+    background: rgba(90,138,94,0.08);
+    border: 1px solid rgba(90,138,94,0.2);
+    border-radius: 12px;
+  }
+
+  .status-title { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; font-family: 'Fira Code', monospace; }
+
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .dot-ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); animation: pulseBadge 2s infinite; }
+  .dot-warn { background: var(--warning); }
+  .dot-off { background: var(--muted); }
+
+  /* ===== MAIN ===== */
+  .main { margin-left: 256px; flex: 1; padding: 32px; }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 36px;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--sand);
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .header-left p { font-size: 14px; color: var(--muted); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(90,138,94,0.1);
+    border: 1px solid rgba(90,138,94,0.3);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--sage-light);
+    font-family: 'Fira Code', monospace;
+  }
+
+  .live-pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--sage-light);
+    animation: livePulse 1.5s infinite;
+  }
+
+  @keyframes livePulse {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(90,138,94,0.6); }
+    70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 8px rgba(90,138,94,0); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost {
+    background: var(--earth-mid);
+    color: var(--sand-muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--terracotta); color: var(--terracotta-light); }
+
+  .btn-terra {
+    background: linear-gradient(135deg, var(--terracotta), var(--amber));
+    color: var(--earth-deep);
+    font-weight: 600;
+    box-shadow: 0 4px 20px var(--glow-terra);
+  }
+
+  .btn-terra:hover { transform: translateY(-1px); box-shadow: 0 6px 28px var(--glow-terra); }
+
+  /* Building selector */
+  .building-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .building-tab {
+    padding: 8px 18px;
+    background: var(--earth-mid);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--muted);
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .building-tab:hover { border-color: var(--clay); color: var(--clay-light); }
+
+  .building-tab.active {
+    background: rgba(196,98,45,0.15);
+    border-color: var(--terracotta);
+    color: var(--terracotta-light);
+  }
+
+  /* ===== KPI CARDS ===== */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--earth-dark);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s both;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .kpi-card.terra::before { background: linear-gradient(90deg, var(--terracotta), transparent); }
+  .kpi-card.amber::before { background: linear-gradient(90deg, var(--amber), transparent); }
+  .kpi-card.sage::before { background: linear-gradient(90deg, var(--sage), transparent); }
+  .kpi-card.clay::before { background: linear-gradient(90deg, var(--clay), transparent); }
+
+  .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+
+  .kpi-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; font-family: 'Fira Code', monospace; }
+
+  .kpi-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .kpi-card.terra .kpi-icon { background: rgba(196,98,45,0.15); }
+  .kpi-card.amber .kpi-icon { background: rgba(212,148,58,0.15); }
+  .kpi-card.sage .kpi-icon { background: rgba(90,138,94,0.15); }
+  .kpi-card.clay .kpi-icon { background: rgba(160,120,80,0.15); }
+
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.terra .kpi-value { color: var(--terracotta-light); }
+  .kpi-card.amber .kpi-value { color: var(--amber-light); }
+  .kpi-card.sage .kpi-value { color: var(--sage-light); }
+  .kpi-card.clay .kpi-value { color: var(--clay-light); }
+
+  .kpi-unit { font-size: 16px; font-weight: 400; opacity: 0.7; font-family: 'Outfit', sans-serif; }
+
+  .kpi-trend { font-size: 12px; color: var(--muted); }
+  .trend-up { color: var(--danger); }
+  .trend-down { color: var(--ok); }
+  .trend-ok { color: var(--ok); }
+
+  /* ===== MAIN GRID ===== */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--earth-dark);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    animation: fadeUp 0.5s 0.15s both;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--sand);
+    margin-bottom: 3px;
+  }
+
+  .card-sub { font-size: 12px; color: var(--muted); }
+
+  .tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'Fira Code', monospace;
+  }
+
+  .tag-terra { background: rgba(196,98,45,0.15); color: var(--terracotta-light); }
+  .tag-sage { background: rgba(90,138,94,0.15); color: var(--sage-light); }
+  .tag-amber { background: rgba(212,148,58,0.15); color: var(--amber-light); }
+  .tag-danger { background: rgba(224,85,85,0.15); color: var(--danger); }
+
+  /* Building 2D map */
+  .building-map {
+    background: var(--earth-mid);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    height: 320px;
+    overflow: hidden;
+  }
+
+  .floor-plan {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .room {
+    position: absolute;
+    border: 1.5px solid rgba(196,98,45,0.3);
+    border-radius: 6px;
+    background: rgba(196,98,45,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .room:hover { background: rgba(196,98,45,0.12); border-color: var(--terracotta); }
+
+  .room.hot { border-color: rgba(224,85,85,0.5); background: rgba(224,85,85,0.06); }
+  .room.warm { border-color: rgba(212,148,58,0.5); background: rgba(212,148,58,0.06); }
+  .room.cool { border-color: rgba(90,138,94,0.5); background: rgba(90,138,94,0.06); }
+
+  .room-name { font-weight: 500; color: var(--sand-muted); margin-bottom: 4px; font-size: 10px; }
+  .room-temp { font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 500; }
+  .room-hum { font-size: 10px; color: var(--muted); }
+
+  .sensor-dot {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    top: 8px; right: 8px;
+  }
+
+  .sensor-dot.active { background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: livePulse 2s infinite; }
+  .sensor-dot.warn { background: var(--warning); }
+  .sensor-dot.alert { background: var(--danger); animation: pulseBadge 1s infinite; }
+
+  /* Chart area */
+  .chart-area { position: relative; }
+
+  .time-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .chart-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Fira Code', monospace;
+    margin-bottom: 8px;
+  }
+
+  /* Sparkline SVG */
+  .sparkline-wrap { position: relative; }
+
+  /* AI Panel */
+  .ai-panel { display: flex; flex-direction: column; gap: 14px; }
+
+  .ai-score-card {
+    background: var(--earth-mid);
+    border: 1px solid rgba(212,148,58,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-score-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(212,148,58,0.08), transparent 60%);
+  }
+
+  .ai-score-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'Fira Code', monospace; margin-bottom: 10px; }
+
+  .ai-score-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: var(--amber-light);
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(212,148,58,0.4);
+  }
+
+  .ai-score-sub { font-size: 12px; color: var(--sage-light); margin-top: 6px; }
+
+  .ai-insight {
+    background: var(--earth-mid);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .ai-insight-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .ai-insight-text { font-size: 13px; line-height: 1.5; }
+  .ai-insight-text strong { color: var(--terracotta-light); }
+  .ai-insight-time { font-size: 10px; color: var(--muted); margin-top: 4px; font-family: 'Fira Code', monospace; }
+
+  /* Bottom row */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* Sensor table */
+  .sensor-table { width: 100%; border-collapse: collapse; }
+
+  .sensor-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Fira Code', monospace;
+    font-weight: 400;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sensor-table td {
+    padding: 12px 0 0;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .sensor-row td { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .sensor-row:last-child td { border-bottom: none; }
+
+  .sensor-id { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--terracotta-light); }
+  .sensor-location { font-size: 12px; color: var(--muted); }
+
+  /* Gauge */
+  .gauge-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .gauge-item {
+    background: var(--earth-mid);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .gauge-label { font-size: 10px; color: var(--muted); margin-bottom: 10px; font-family: 'Fira Code', monospace; letter-spacing: 1px; }
+
+  .gauge-bar-wrap { height: 8px; background: var(--earth-dark); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .gauge-bar { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+
+  .gauge-val { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+
+  /* Alert feed */
+  .alert-feed { display: flex; flex-direction: column; gap: 0; }
+
+  .alert-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .alert-item:last-child { border-bottom: none; }
+
+  .alert-sev {
+    width: 4px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    align-self: stretch;
+    min-height: 40px;
+  }
+
+  .sev-high { background: var(--danger); }
+  .sev-med { background: var(--warning); }
+  .sev-low { background: var(--sage); }
+
+  .alert-body { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .alert-detail { font-size: 11px; color: var(--muted); }
+  .alert-time { font-size: 10px; color: var(--muted); font-family: 'Fira Code', monospace; flex-shrink: 0; margin-top: 2px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Clock */
+  .clock { font-family: 'Fira Code', monospace; font-size: 13px; color: var(--muted); background: var(--earth-mid); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Energy savings bar */
+  .energy-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .energy-label { font-size: 12px; width: 100px; color: var(--sand-muted); }
+  .energy-bar-wrap { flex: 1; height: 10px; background: var(--earth-mid); border-radius: 5px; overflow: hidden; }
+  .energy-bar { height: 100%; border-radius: 5px; }
+  .energy-val { font-family: 'Fira Code', monospace; font-size: 12px; width: 36px; text-align: right; }
+
+  /* Prediction card */
+  .pred-card {
+    background: linear-gradient(135deg, rgba(196,98,45,0.12), rgba(90,138,94,0.08));
+    border: 1px solid rgba(196,98,45,0.25);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .pred-header { font-size: 11px; color: var(--amber-light); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Fira Code', monospace; margin-bottom: 8px; }
+  .pred-text { font-size: 13px; line-height: 1.6; color: var(--sand-muted); }
+  .pred-value { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--sage-light); font-weight: 700; }
+
+  .material-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    background: rgba(160,120,80,0.15);
+    color: var(--clay-light);
+    border: 1px solid rgba(160,120,80,0.2);
+    margin: 2px;
+    font-family: 'Fira Code', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">🏛️</div>
+        <div>
+          <div class="logo-name">Smart<span>Earthen</span></div>
+        </div>
+      </div>
+      <div class="logo-sub">IoT · AI · Monitoring</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active"><span class="nav-icon">⊞</span> Tableau de bord</div>
+      <div class="nav-item"><span class="nav-icon">🏗️</span> Bâtiments</div>
+      <div class="nav-item"><span class="nav-icon">📡</span> Capteurs IoT</div>
+      <div class="nav-item"><span class="nav-icon">🌡️</span> Hygrothermique</div>
+      <div class="nav-item"><span class="nav-icon">⚡</span> Énergie</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Intelligence</div>
+      <div class="nav-item"><span class="nav-icon">🤖</span> Prédictions IA</div>
+      <div class="nav-item"><span class="nav-icon">📊</span> Analyses</div>
+      <div class="nav-item"><span class="nav-icon">🚨</span> Alertes <span class="alert-badge">3</span></div>
+      <div class="nav-item"><span class="nav-icon">📋</span> Rapports</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Système</div>
+      <div class="nav-item"><span class="nav-icon">🔬</span> Matériaux</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+    </div>
+
+    <div class="nav-spacer"></div>
+
+    <div class="system-status">
+      <div class="status-title">État Système</div>
+      <div class="status-row">
+        <span><span class="status-dot dot-ok"></span>MQTT Broker</span>
+        <span style="color:var(--sage-light);font-size:11px">EN LIGNE</span>
+      </div>
+      <div class="status-row">
+        <span><span class="status-dot dot-ok"></span>IA Engine</span>
+        <span style="color:var(--sage-light);font-size:11px">ACTIF</span>
+      </div>
+      <div class="status-row">
+        <span><span class="status-dot dot-ok"></span>Base données</span>
+        <span style="color:var(--sage-light);font-size:11px">OK</span>
+      </div>
+      <div class="status-row">
+        <span><span class="status-dot dot-warn"></span>Capteur S-07</span>
+        <span style="color:var(--warning);font-size:11px">FAIBLE</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Monitoring Intelligent</h1>
+        <p>Constructions en terre — Thèse Doctorat Génie Civil · <span id="dateDisplay"></span></p>
+      </div>
+      <div class="header-right">
+        <div class="live-indicator"><div class="live-pulse"></div> DONNÉES EN DIRECT</div>
+        <div class="clock" id="clockDisplay">--:--:--</div>
+        <button class="btn btn-ghost">📥 Exporter</button>
+        <button class="btn btn-terra">+ Ajouter capteur</button>
+      </div>
+    </div>
+
+    <!-- Building tabs -->
+    <div class="building-tabs">
+      <div class="building-tab active">🏛️ Bâtiment A — Pisé</div>
+      <div class="building-tab">🏺 Bâtiment B — Adobe</div>
+      <div class="building-tab">🧱 Bâtiment C — BTC</div>
+      <div class="building-tab">🏠 Prototype D — Cob</div>
+      <div class="building-tab">+ Ajouter</div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card terra" style="animation-delay:0.05s">
+        <div class="kpi-header">
+          <span class="kpi-label">Température Moy.</span>
+          <div class="kpi-icon">🌡️</div>
+        </div>
+        <div class="kpi-value" id="kTemp">0<span class="kpi-unit">°C</span></div>
+        <div class="kpi-trend trend-ok">↓ −2.3°C vs hier · Confort optimal</div>
+      </div>
+      <div class="kpi-card amber" style="animation-delay:0.1s">
+        <div class="kpi-header">
+          <span class="kpi-label">Humidité Relative</span>
+          <div class="kpi-icon">💧</div>
+        </div>
+        <div class="kpi-value" id="kHum">0<span class="kpi-unit">%</span></div>
+        <div class="kpi-trend trend-up">↑ +4% · Zone limite</div>
+      </div>
+      <div class="kpi-card sage" style="animation-delay:0.15s">
+        <div class="kpi-header">
+          <span class="kpi-label">Économie Énergie</span>
+          <div class="kpi-icon">⚡</div>
+        </div>
+        <div class="kpi-value" id="kEnergy">0<span class="kpi-unit">%</span></div>
+        <div class="kpi-trend trend-ok">↑ +6.2% ce mois</div>
+      </div>
+      <div class="kpi-card clay" style="animation-delay:0.2s">
+        <div class="kpi-header">
+          <span class="kpi-label">Capteurs Actifs</span>
+          <div class="kpi-icon">📡</div>
+        </div>
+        <div class="kpi-value" id="kSensors">0<span class="kpi-unit" style="font-size:14px">/48</span></div>
+        <div class="kpi-trend" style="color:var(--warning)">⚠ 1 capteur faible signal</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="main-grid">
+      <!-- Left: Floor plan + chart -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Floor plan -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Plan Thermique — Bâtiment A (Pisé)</div>
+              <div class="card-sub">Carte hygrothermique en temps réel · RDC</div>
+            </div>
+            <span class="tag tag-terra">PISÉ COMPACTÉ</span>
+          </div>
+          <div class="building-map">
+            <div class="floor-plan">
+              <!-- Rooms -->
+              <div class="room warm" style="left:5%;top:5%;width:28%;height:42%">
+                <div class="sensor-dot active"></div>
+                <div class="room-name">Salon</div>
+                <div class="room-temp" style="color:var(--amber-light)">23.4°C</div>
+                <div class="room-hum">HR: 58%</div>
+              </div>
+              <div class="room cool" style="left:5%;top:52%;width:28%;height:43%">
+                <div class="sensor-dot active"></div>
+                <div class="room-name">Chambre 1</div>
+                <div class="room-temp" style="color:var(--sage-light)">20.1°C</div>
+                <div class="room-hum">HR: 52%</div>
+              </div>
+              <div class="room hot" style="left:36%;top:5%;width:30%;height:30%">
+                <div class="sensor-dot alert"></div>
+                <div class="room-name">Cuisine</div>
+                <div class="room-temp" style="color:var(--danger)">28.7°C</div>
+                <div class="room-hum">HR: 74% ⚠</div>
+              </div>
+              <div class="room cool" style="left:36%;top:38%;width:30%;height:30%">
+                <div class="sensor-dot active"></div>
+                <div class="room-name">Chambre 2</div>
+                <div class="room-temp" style="color:var(--sage-light)">19.8°C</div>
+                <div class="room-hum">HR: 50%</div>
+              </div>
+              <div class="room" style="left:36%;top:71%;width:30%;height:24%">
+                <div class="sensor-dot warn"></div>
+                <div class="room-name">SDB</div>
+                <div class="room-temp" style="color:var(--clay-light)">22.3°C</div>
+                <div class="room-hum">HR: 68%</div>
+              </div>
+              <div class="room cool" style="left:69%;top:5%;width:26%;height:90%">
+                <div class="sensor-dot active"></div>
+                <div class="room-name">Bureau</div>
+                <div class="room-temp" style="color:var(--sage-light)">21.2°C</div>
+                <div class="room-hum">HR: 49%</div>
+              </div>
+              <!-- Compass -->
+              <div style="position:absolute;bottom:10px;left:10px;font-size:10px;color:var(--muted);font-family:'Fira Code',monospace">
+                N ↑ | Murs pisé 50cm
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time series chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Évolution Hygrothermique — 24h</div>
+              <div class="card-sub">Température intérieure vs extérieure · Humidité relative</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <span class="tag tag-terra">24H</span>
+              <span class="tag" style="background:var(--earth-mid);color:var(--muted)">7J</span>
+              <span class="tag" style="background:var(--earth-mid);color:var(--muted)">30J</span>
+            </div>
+          </div>
+
+          <div class="chart-label-row">
+            <span>00:00</span><span>04:00</span><span>08:00</span>
+            <span>12:00</span><span>16:00</span><span>20:00</span><span>23:59</span>
+          </div>
+
+          <!-- SVG Chart -->
+          <svg width="100%" height="180" viewBox="0 0 800 180" preserveAspectRatio="none" style="display:block">
+            <defs>
+              <linearGradient id="gradTemp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#c4622d" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#c4622d" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gradHum" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#5a8a5e" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#5a8a5e" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gradExt" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d4943a" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#d4943a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="0" y1="45" x2="800" y2="45" stroke="rgba(196,98,45,0.08)" stroke-width="1"/>
+            <line x1="0" y1="90" x2="800" y2="90" stroke="rgba(196,98,45,0.08)" stroke-width="1"/>
+            <line x1="0" y1="135" x2="800" y2="135" stroke="rgba(196,98,45,0.08)" stroke-width="1"/>
+            <!-- Humidity fill -->
+            <path d="M0,130 Q100,120 200,110 Q300,100 400,115 Q500,125 600,108 Q700,95 800,102 L800,180 L0,180 Z"
+                  fill="url(#gradHum)" />
+            <path d="M0,130 Q100,120 200,110 Q300,100 400,115 Q500,125 600,108 Q700,95 800,102"
+                  fill="none" stroke="var(--sage)" stroke-width="2" stroke-dasharray="6,3"/>
+            <!-- Exterior temp fill -->
+            <path d="M0,100 Q100,80 200,55 Q300,35 400,50 Q500,65 600,45 Q700,30 800,55 L800,180 L0,180 Z"
+                  fill="url(#gradExt)" />
+            <path d="M0,100 Q100,80 200,55 Q300,35 400,50 Q500,65 600,45 Q700,30 800,55"
+                  fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
+            <!-- Interior temp fill -->
+            <path d="M0,120 Q100,112 200,100 Q300,90 400,95 Q500,88 600,82 Q700,78 800,85 L800,180 L0,180 Z"
+                  fill="url(#gradTemp)" />
+            <path d="M0,120 Q100,112 200,100 Q300,90 400,95 Q500,88 600,82 Q700,78 800,85"
+                  fill="none" stroke="var(--terracotta)" stroke-width="2.5"/>
+            <!-- Now indicator -->
+            <line x1="680" y1="0" x2="680" y2="180" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3,3"/>
+            <circle cx="680" cy="84" r="4" fill="var(--terracotta)" stroke="var(--earth-dark)" stroke-width="2"/>
+          </svg>
+
+          <div style="display:flex;gap:20px;margin-top:12px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+              <div style="width:16px;height:2px;background:var(--terracotta);border-radius:1px"></div> Temp. intérieure
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+              <div style="width:16px;height:2px;background:var(--amber);border-radius:1px;opacity:0.6"></div> Temp. extérieure
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+              <div style="width:16px;height:2px;background:var(--sage);border-radius:1px"></div> Humidité relative
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: AI Panel -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- AI Score -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">IA — Score Confort</div>
+              <div class="card-sub">Modèle LSTM · Mise à jour /15min</div>
+            </div>
+            <span class="tag tag-amber">🤖 IA</span>
+          </div>
+          <div class="ai-panel">
+            <div class="ai-score-card">
+              <div class="ai-score-label">Indice Performance Globale</div>
+              <div class="ai-score-value" id="aiScore">0</div>
+              <div class="ai-score-sub">✅ Performance Excellente</div>
+            </div>
+
+            <div class="pred-card">
+              <div class="pred-header">⚡ Prédiction Énergétique — 48h</div>
+              <div class="pred-text">Économie estimée : <div class="pred-value">-34 kWh</div></div>
+              <div class="pred-text" style="margin-top:6px">Réduction coûts opérationnels prévue de <strong style="color:var(--terracotta-light)">18.5%</strong> grâce à l'inertie thermique.</div>
+            </div>
+
+            <div class="ai-insight">
+              <div class="ai-insight-icon">🌡️</div>
+              <div>
+                <div class="ai-insight-text"><strong>Anomalie détectée</strong> — Cuisine : humidité 74%, dépasse seuil critique (70%). Risque de condensation sur murs en pisé.</div>
+                <div class="ai-insight-time">Il y a 8 min · Sévérité: HAUTE</div>
+              </div>
+            </div>
+
+            <div class="ai-insight">
+              <div class="ai-insight-icon">📉</div>
+              <div>
+                <div class="ai-insight-text"><strong>Optimisation</strong> — Réduction ventilation recommandée entre 14h-16h pour maximiser l'effet tampon thermique du pisé.</div>
+                <div class="ai-insight-time">Il y a 22 min · Économie: +4.2%</div>
+              </div>
+            </div>
+
+            <div class="ai-insight">
+              <div class="ai-insight-icon">🔬</div>
+              <div>
+                <div class="ai-insight-text"><strong>Matériau</strong> — Capacité hygroscopique nominale. Teneur en eau pisé stable à 2.1% masse sèche.</div>
+                <div class="ai-insight-time">Il y a 1h · Status: NOMINAL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Material tags -->
+        <div class="card" style="padding:16px">
+          <div class="card-title" style="font-size:14px;margin-bottom:10px">Matériaux Instrumentés</div>
+          <span class="material-chip">Pisé compacté</span>
+          <span class="material-chip">Adobe stabilisé</span>
+          <span class="material-chip">BTC-5%</span>
+          <span class="material-chip">Cob fibré</span>
+          <span class="material-chip">Torchis</span>
+          <span class="material-chip">Bauge</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom grid -->
+    <div class="bottom-grid">
+
+      <!-- Sensor table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Capteurs IoT Actifs</div>
+            <div class="card-sub">47 / 48 en ligne · Protocole MQTT</div>
+          </div>
+          <span class="tag tag-sage">MQTT</span>
+        </div>
+        <table class="sensor-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Zone</th>
+              <th>Temp.</th>
+              <th>HR%</th>
+              <th>État</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="sensor-row">
+              <td><span class="sensor-id">SEB-01</span><br><span class="sensor-location">DHT22 · Mur N</span></td>
+              <td>Salon</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--amber-light)">23.4°</td>
+              <td style="font-family:'Fira Code',monospace">58%</td>
+              <td><span class="tag tag-sage" style="font-size:10px">OK</span></td>
+            </tr>
+            <tr class="sensor-row">
+              <td><span class="sensor-id">SEB-03</span><br><span class="sensor-location">BME280 · Cuisine</span></td>
+              <td>Cuisine</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--danger)">28.7°</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--danger)">74%</td>
+              <td><span class="tag tag-danger" style="font-size:10px">ALERTE</span></td>
+            </tr>
+            <tr class="sensor-row">
+              <td><span class="sensor-id">SEB-05</span><br><span class="sensor-location">SHT31 · Plancher</span></td>
+              <td>Ch. 1</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--sage-light)">20.1°</td>
+              <td style="font-family:'Fira Code',monospace">52%</td>
+              <td><span class="tag tag-sage" style="font-size:10px">OK</span></td>
+            </tr>
+            <tr class="sensor-row">
+              <td><span class="sensor-id">SEB-07</span><br><span class="sensor-location">DHT22 · Ext.</span></td>
+              <td>Extérieur</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--amber-light)">31.2°</td>
+              <td style="font-family:'Fira Code',monospace">38%</td>
+              <td><span class="tag tag-amber" style="font-size:10px">FAIBLE</span></td>
+            </tr>
+            <tr class="sensor-row">
+              <td><span class="sensor-id">SEB-12</span><br><span class="sensor-location">BME680 · Mur S</span></td>
+              <td>Bureau</td>
+              <td style="font-family:'Fira Code',monospace;color:var(--sage-light)">21.2°</td>
+              <td style="font-family:'Fira Code',monospace">49%</td>
+              <td><span class="tag tag-sage" style="font-size:10px">OK</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Energy savings -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Bilan Énergétique</div>
+            <div class="card-sub">Réduction coûts vs construction conventionnelle</div>
+          </div>
+          <span class="tag tag-sage">−32%</span>
+        </div>
+        <div class="energy-row">
+          <div class="energy-label">Chauffage</div>
+          <div class="energy-bar-wrap">
+            <div class="energy-bar" style="width:68%;background:linear-gradient(90deg,var(--terracotta),var(--amber))"></div>
+          </div>
+          <div class="energy-val" style="color:var(--amber-light)">−32%</div>
+        </div>
+        <div class="energy-row">
+          <div class="energy-label">Climatisation</div>
+          <div class="energy-bar-wrap">
+            <div class="energy-bar" style="width:78%;background:linear-gradient(90deg,var(--sage),var(--sage-light))"></div>
+          </div>
+          <div class="energy-val" style="color:var(--sage-light)">−45%</div>
+        </div>
+        <div class="energy-row">
+          <div class="energy-label">Ventilation</div>
+          <div class="energy-bar-wrap">
+            <div class="energy-bar" style="width:40%;background:linear-gradient(90deg,var(--clay),var(--clay-light))"></div>
+          </div>
+          <div class="energy-val" style="color:var(--clay-light)">−18%</div>
+        </div>
+        <div class="energy-row">
+          <div class="energy-label">Éclairage</div>
+          <div class="energy-bar-wrap">
+            <div class="energy-bar" style="width:25%;background:linear-gradient(90deg,var(--amber-light),#f4cc70)"></div>
+          </div>
+          <div class="energy-val" style="color:var(--amber-light)">−12%</div>
+        </div>
+
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Fira Code',monospace">ÉCONOMIE ANNUELLE ESTIMÉE</div>
+          <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--sage-light);font-weight:700">8 240 <span style="font-size:14px;font-family:'Outfit',sans-serif">MAD / an</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Réduction CO₂ : −2.4 t/an</div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Alertes Actives</div>
+            <div class="card-sub">Détection IA + seuils hygrothermiques</div>
+          </div>
+          <span class="tag tag-danger">3 ALERTES</span>
+        </div>
+        <div class="alert-feed">
+          <div class="alert-item">
+            <div class="alert-sev sev-high"></div>
+            <div class="alert-body">
+              <div class="alert-title" style="color:var(--danger)">🚨 Humidité critique — Cuisine</div>
+              <div class="alert-detail">SEB-03 : HR=74% > seuil 70%. Risque de dégradation pisé. Action requise.</div>
+            </div>
+            <div class="alert-time">08:42</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-sev sev-med"></div>
+            <div class="alert-body">
+              <div class="alert-title" style="color:var(--warning)">⚠ Capteur batterie faible</div>
+              <div class="alert-detail">SEB-07 (Extérieur) : Batterie 12%. Remplacement conseillé sous 48h.</div>
+            </div>
+            <div class="alert-time">06:15</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-sev sev-low"></div>
+            <div class="alert-body">
+              <div class="alert-title" style="color:var(--sage-light)">ℹ Pic thermique détecté</div>
+              <div class="alert-detail">Température extérieure +31°C prévue. Activation mode protection thermique.</div>
+            </div>
+            <div class="alert-time">05:00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Clock
+  function tick() {
+    const now = new Date();
+    document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('fr-FR');
+    document.getElementById('dateDisplay').textContent = now.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Animate counters
+  function animCount(id, target, suffix='', decimals=0) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let start = 0, dur = 1400;
+    const step = ts => {
+      if (!step.s) step.s = ts;
+      const p = Math.min((ts - step.s) / dur, 1);
+      const ease = 1 - Math.pow(1-p, 3);
+      const val = ease * target;
+      el.innerHTML = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix + (el.dataset.unit || '');
+      if (p < 1) requestAnimationFrame(step);
+      else el.innerHTML = (decimals ? target.toFixed(decimals) : target) + suffix;
+    };
+    requestAnimationFrame(step);
+  }
+
+  setTimeout(() => {
+    // Rebuild KPI values with units
+    document.getElementById('kTemp').innerHTML = '22.4<span class="kpi-unit">°C</span>';
+    document.getElementById('kHum').innerHTML = '61<span class="kpi-unit">%</span>';
+    document.getElementById('kEnergy').innerHTML = '38<span class="kpi-unit">%</span>';
+    document.getElementById('kSensors').innerHTML = '47<span class="kpi-unit" style="font-size:14px">/48</span>';
+    // AI Score
+    animCount('aiScore', 87);
+  }, 400);
+
+  // Simulate live data flicker
+  const rooms = document.querySelectorAll('.room-temp');
+  setInterval(() => {
+    rooms.forEach(r => {
+      const v = parseFloat(r.textContent);
+      const delta = (Math.random() - 0.5) * 0.2;
+      r.textContent = (v + delta).toFixed(1) + '°C';
+    });
+  }, 4000);
+</script>
+</body>
+</html>

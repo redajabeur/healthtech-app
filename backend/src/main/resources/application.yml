@@ -1,0 +1,69 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: smart-earthen-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smartearthen_db
+    username: postgres
+    password: yourpassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Redis Cache
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # MQTT
+mqtt:
+  broker-url: tcp://localhost:1883
+  client-id: smart-earthen-server
+  username: ""
+  password: ""
+  topic:
+    sensors: "earthen/+/sensors/#"
+    alerts: "earthen/+/alerts"
+
+jwt:
+  secret: smart-earthen-super-secret-key-256bits-minimum-for-hs256
+  expiration: 86400000
+
+# Seuils alertes hygrothermiques
+thresholds:
+  temperature:
+    min: 16.0
+    max: 28.0
+    critical-max: 35.0
+  humidity:
+    min: 30.0
+    max: 70.0
+    critical-max: 80.0
+  co2:
+    max: 1000
+    critical-max: 2000
+
+# IA — configuration modèles
+ai:
+  model-path: classpath:models/
+  prediction-horizon-hours: 48
+  anomaly-threshold: 0.85
+  comfort-score-weights:
+    temperature: 0.4
+    humidity: 0.35
+    co2: 0.25
+
+logging:
+  level:
+    com.smartearthen: INFO
+    org.eclipse.paho: WARN

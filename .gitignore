@@ -1,0 +1,38 @@
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/*.log
+
+# ML / Python
+ml/__pycache__/
+ml/.venv/
+ml/models/*.h5
+ml/models/*.pkl
+ml/data/*.csv
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — NE JAMAIS COMMITTER
+*.env
+.env
+.env.local
+application-prod.yml
+application-secret.yml
+mosquitto.passwd
+
+# Docker volumes
+docker/data/
