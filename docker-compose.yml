@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: healthtech-db
+    environment:
+      POSTGRES_DB: healthtech_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - healthtech-net
+
+  backend:
+    build: ./backend
+    container_name: healthtech-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/healthtech_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: yourpassword
+    depends_on:
+      - postgres
+    networks:
+      - healthtech-net
+
+  frontend:
+    build: ./frontend
+    container_name: healthtech-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - healthtech-net
+
+volumes:
+  postgres_data:
+
+networks:
+  healthtech-net:
+    driver: bridge

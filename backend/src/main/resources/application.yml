@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/healthtech_db
+    username: postgres
+    password: yourpassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+
+jwt:
+  secret: healthtech-super-secret-key-256-bits-minimum-for-hs256-algorithm
+  expiration: 86400000  # 24h en millisecondes
+
+logging:
+  level:
+    com.healthtech: INFO
+    org.springframework.security: WARN
