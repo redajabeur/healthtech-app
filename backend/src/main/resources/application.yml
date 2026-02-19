@@ -2,11 +2,16 @@ server:
   port: 8080
 
 spring:
+<<<<<<< HEAD
   application:
     name: smart-earthen-backend
 
   datasource:
     url: jdbc:postgresql://localhost:5432/smartearthen_db
+=======
+  datasource:
+    url: jdbc:postgresql://localhost:5432/healthtech_db
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477
     username: postgres
     password: yourpassword
     driver-class-name: org.postgresql.Driver
@@ -18,6 +23,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+<<<<<<< HEAD
 
   # Redis Cache
   data:
@@ -67,3 +73,20 @@ logging:
   level:
     com.smartearthen: INFO
     org.eclipse.paho: WARN
+=======
+        format_sql: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+
+jwt:
+  secret: healthtech-super-secret-key-256-bits-minimum-for-hs256-algorithm
+  expiration: 86400000  # 24h en millisecondes
+
+logging:
+  level:
+    com.healthtech: INFO
+    org.springframework.security: WARN
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477

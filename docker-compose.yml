@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+<<<<<<< HEAD
   # Base de données PostgreSQL + TimescaleDB (extension séries temporelles)
   postgres:
     image: timescale/timescaledb:latest-pg15
@@ -67,11 +68,45 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: earthen-frontend
+=======
+  postgres:
+    image: postgres:15-alpine
+    container_name: healthtech-db
+    environment:
+      POSTGRES_DB: healthtech_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - healthtech-net
+
+  backend:
+    build: ./backend
+    container_name: healthtech-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/healthtech_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: yourpassword
+    depends_on:
+      - postgres
+    networks:
+      - healthtech-net
+
+  frontend:
+    build: ./frontend
+    container_name: healthtech-frontend
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477
     ports:
       - "4200:80"
     depends_on:
       - backend
     networks:
+<<<<<<< HEAD
       - earthen-net
 
   # Jupyter Notebook pour les modèles IA
@@ -91,4 +126,13 @@ volumes:
 
 networks:
   earthen-net:
+=======
+      - healthtech-net
+
+volumes:
+  postgres_data:
+
+networks:
+  healthtech-net:
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477
     driver: bridge

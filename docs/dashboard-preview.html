@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthTech — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070c14;
+    --surface: #0d1520;
+    --surface2: #111c2c;
+    --border: rgba(255,255,255,0.06);
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --danger: #ef4444;
+    --text: #e8f0fe;
+    --muted: #5c7099;
+    --card-glow: rgba(0,212,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(180deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  .logo {
+    padding: 0 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .nav-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 0 24px 10px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    border-left: 2px solid transparent;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+  .nav-item.active {
+    color: var(--accent);
+    background: rgba(0,212,255,0.05);
+    border-left-color: var(--accent);
+  }
+
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav-spacer { flex: 1; }
+
+  .user-card {
+    margin: 0 16px 0;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .user-info { overflow: hidden; }
+  .user-name { font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .user-role { font-size: 11px; color: var(--muted); }
+
+  /* Main */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 32px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+
+  .header-left h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .header-left p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: var(--bg);
+    font-weight: 700;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(0,212,255,0.5); }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.5s both;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .kpi-card.blue::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .kpi-card.purple::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .kpi-card.green::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .kpi-card.amber::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; right: -20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: 0.04;
+  }
+
+  .kpi-card.blue::after { background: var(--accent); }
+  .kpi-card.purple::after { background: var(--accent2); }
+  .kpi-card.green::after { background: var(--accent3); }
+  .kpi-card.amber::after { background: var(--accent4); }
+
+  .kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  .kpi-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .kpi-card.blue .kpi-icon { background: rgba(0,212,255,0.1); }
+  .kpi-card.purple .kpi-icon { background: rgba(124,58,237,0.1); }
+  .kpi-card.green .kpi-icon { background: rgba(16,185,129,0.1); }
+  .kpi-card.amber .kpi-icon { background: rgba(245,158,11,0.1); }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .kpi-card.blue .kpi-value { color: var(--accent); }
+  .kpi-card.purple .kpi-value { color: var(--accent2); }
+  .kpi-card.green .kpi-value { color: var(--accent3); }
+  .kpi-card.amber .kpi-value { color: var(--accent4); }
+
+  .kpi-change {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+  }
+
+  .kpi-change.up { color: var(--accent3); }
+  .kpi-change.down { color: var(--danger); }
+
+  /* Charts row */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    animation: fadeUp 0.5s 0.2s both;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .tag-blue { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .tag-green { background: rgba(16,185,129,0.1); color: var(--accent3); }
+
+  /* Bar chart */
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 160px;
+  }
+
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar-wrap {
+    width: 100%;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 140px;
+  }
+
+  .bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+  }
+
+  .bar:hover { opacity: 0.8; }
+  .bar-a { background: linear-gradient(180deg, var(--accent), rgba(0,212,255,0.3)); }
+  .bar-b { background: linear-gradient(180deg, var(--accent2), rgba(124,58,237,0.3)); }
+
+  .bar-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+  }
+
+  /* Donut chart */
+  .donut-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .donut-container {
+    position: relative;
+    width: 160px;
+    height: 160px;
+  }
+
+  .donut-svg { transform: rotate(-90deg); }
+
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .donut-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .donut-label { font-size: 11px; color: var(--muted); }
+
+  .donut-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .donut-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .donut-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .donut-legend-label { color: var(--muted); flex: 1; font-size: 12px; }
+  .donut-legend-val { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* Bottom row */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* Table */
+  .appt-table { width: 100%; border-collapse: collapse; }
+
+  .appt-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+    padding: 0 0 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .appt-table td {
+    padding: 14px 0 0;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .appt-row td { border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+  .appt-row:last-child td { border-bottom: none; }
+
+  .patient-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mini-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .patient-name { font-weight: 500; font-size: 13px; }
+  .patient-id { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .status-pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    display: inline-block;
+  }
+
+  .status-confirmed { background: rgba(16,185,129,0.1); color: var(--accent3); }
+  .status-pending { background: rgba(245,158,11,0.1); color: var(--accent4); }
+  .status-cancelled { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+  /* Activity feed */
+  .activity-feed { display: flex; flex-direction: column; gap: 0; }
+
+  .activity-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .activity-content { flex: 1; }
+
+  .activity-text {
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+
+  .activity-text strong { color: var(--text); font-weight: 500; }
+
+  .activity-time {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Pulse animation */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+  }
+
+  .pulse { animation: pulse 2s infinite; }
+
+  /* Live indicator */
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Notification bell */
+  .notif-btn {
+    width: 38px; height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .notif-btn:hover { border-color: var(--accent); }
+
+  .notif-dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--danger);
+    border: 1px solid var(--surface);
+  }
+
+  /* Line chart area */
+  .line-chart-area {
+    position: relative;
+    height: 80px;
+    margin-top: 12px;
+  }
+
+  .sparkline-svg { width: 100%; height: 80px; }
+
+  /* Mini stat row */
+  .mini-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mini-stat {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .mini-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .mini-stat-label { font-size: 11px; color: var(--muted); }
+
+  /* Progress bars */
+  .progress-item { margin-bottom: 16px; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+  .progress-pct { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+  .clock-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      <div class="logo-text">Health<span>Tech</span></div>
+    </div>
+
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active"><span class="icon">⊞</span> Tableau de bord</div>
+    <div class="nav-item"><span class="icon">👥</span> Patients <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="icon">🩺</span> Médecins</div>
+    <div class="nav-item"><span class="icon">📅</span> Rendez-vous</div>
+
+    <div class="nav-label" style="margin-top:20px">Médical</div>
+    <div class="nav-item"><span class="icon">📋</span> Dossiers médicaux</div>
+    <div class="nav-item"><span class="icon">💊</span> Prescriptions</div>
+    <div class="nav-item"><span class="icon">🔬</span> Analyses</div>
+
+    <div class="nav-label" style="margin-top:20px">Système</div>
+    <div class="nav-item"><span class="icon">📊</span> Rapports</div>
+    <div class="nav-item"><span class="icon">⚙️</span> Paramètres</div>
+
+    <div class="nav-spacer"></div>
+
+    <div class="user-card">
+      <div class="avatar">AD</div>
+      <div class="user-info">
+        <div class="user-name">Dr. Adam B.</div>
+        <div class="user-role">Administrateur</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Tableau de bord</h1>
+        <p>Vue d'ensemble — <span id="dateDisplay"></span></p>
+      </div>
+      <div class="header-right">
+        <div class="clock-display" id="clockDisplay">--:--:--</div>
+        <div class="notif-btn">🔔 <div class="notif-dot"></div></div>
+        <button class="btn btn-ghost">Exporter</button>
+        <button class="btn btn-primary">+ Nouveau RDV</button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card blue" style="animation-delay:0.05s">
+        <div class="kpi-header">
+          <span class="kpi-label">PATIENTS TOTAL</span>
+          <div class="kpi-icon">👤</div>
+        </div>
+        <div class="kpi-value" id="kpi1">0</div>
+        <div class="kpi-change up">↑ +12 ce mois</div>
+      </div>
+      <div class="kpi-card purple" style="animation-delay:0.1s">
+        <div class="kpi-header">
+          <span class="kpi-label">MÉDECINS ACTIFS</span>
+          <div class="kpi-icon">🩺</div>
+        </div>
+        <div class="kpi-value" id="kpi2">0</div>
+        <div class="kpi-change up">↑ +2 nouvelles recrues</div>
+      </div>
+      <div class="kpi-card green" style="animation-delay:0.15s">
+        <div class="kpi-header">
+          <span class="kpi-label">RDV AUJOURD'HUI</span>
+          <div class="kpi-icon">📅</div>
+        </div>
+        <div class="kpi-value" id="kpi3">0</div>
+        <div class="kpi-change up">↑ 85% confirmés</div>
+      </div>
+      <div class="kpi-card amber" style="animation-delay:0.2s">
+        <div class="kpi-header">
+          <span class="kpi-label">EN ATTENTE</span>
+          <div class="kpi-icon">⏳</div>
+        </div>
+        <div class="kpi-value" id="kpi4">0</div>
+        <div class="kpi-change down">↓ À traiter</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Bar Chart -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Activité hebdomadaire</div>
+            <div class="card-sub">RDV confirmés vs annulés</div>
+          </div>
+          <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+        </div>
+        <div class="bar-chart" id="barChart"></div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Confirmés</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>Annulés</div>
+        </div>
+      </div>
+
+      <!-- Donut -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Spécialités</div>
+            <div class="card-sub">Répartition des consultations</div>
+          </div>
+          <span class="tag tag-blue">Ce mois</span>
+        </div>
+        <div class="donut-wrapper">
+          <div class="donut-container">
+            <svg class="donut-svg" width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="60" fill="none" stroke="var(--surface2)" stroke-width="20"/>
+              <circle cx="80" cy="80" r="60" fill="none" stroke="var(--accent)" stroke-width="20"
+                stroke-dasharray="131 376" stroke-dashoffset="0" stroke-linecap="round"/>
+              <circle cx="80" cy="80" r="60" fill="none" stroke="var(--accent2)" stroke-width="20"
+                stroke-dasharray="94 376" stroke-dashoffset="-131" stroke-linecap="round"/>
+              <circle cx="80" cy="80" r="60" fill="none" stroke="var(--accent3)" stroke-width="20"
+                stroke-dasharray="75 376" stroke-dashoffset="-225" stroke-linecap="round"/>
+              <circle cx="80" cy="80" r="60" fill="none" stroke="var(--accent4)" stroke-width="20"
+                stroke-dasharray="57 376" stroke-dashoffset="-300" stroke-linecap="round"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-value">348</div>
+              <div class="donut-label">Total</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="donut-legend-item">
+              <div class="donut-legend-dot" style="background:var(--accent)"></div>
+              <span class="donut-legend-label">Cardiologie</span>
+              <span class="donut-legend-val">35%</span>
+            </div>
+            <div class="donut-legend-item">
+              <div class="donut-legend-dot" style="background:var(--accent2)"></div>
+              <span class="donut-legend-label">Neurologie</span>
+              <span class="donut-legend-val">25%</span>
+            </div>
+            <div class="donut-legend-item">
+              <div class="donut-legend-dot" style="background:var(--accent3)"></div>
+              <span class="donut-legend-label">Pédiatrie</span>
+              <span class="donut-legend-val">20%</span>
+            </div>
+            <div class="donut-legend-item">
+              <div class="donut-legend-dot" style="background:var(--accent4)"></div>
+              <span class="donut-legend-label">Autres</span>
+              <span class="donut-legend-val">20%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+      <!-- Appointments table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Rendez-vous du jour</div>
+            <div class="card-sub">19 Février 2026</div>
+          </div>
+          <span class="tag tag-green">24 total</span>
+        </div>
+        <table class="appt-table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Médecin</th>
+              <th>Heure</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="appt-row">
+              <td>
+                <div class="patient-cell">
+                  <div class="mini-avatar" style="background:linear-gradient(135deg,#00d4ff,#0099cc)">KA</div>
+                  <div>
+                    <div class="patient-name">Karim Alaoui</div>
+                    <div class="patient-id">#PAT-0041</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:12px">Dr. Benali</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">09:00</td>
+              <td><span class="status-pill status-confirmed">Confirmé</span></td>
+            </tr>
+            <tr class="appt-row">
+              <td>
+                <div class="patient-cell">
+                  <div class="mini-avatar" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">SM</div>
+                  <div>
+                    <div class="patient-name">Sara Mansouri</div>
+                    <div class="patient-id">#PAT-0089</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:12px">Dr. Chraibi</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">10:30</td>
+              <td><span class="status-pill status-pending">En attente</span></td>
+            </tr>
+            <tr class="appt-row">
+              <td>
+                <div class="patient-cell">
+                  <div class="mini-avatar" style="background:linear-gradient(135deg,#10b981,#059669)">MO</div>
+                  <div>
+                    <div class="patient-name">Mohammed Ouali</div>
+                    <div class="patient-id">#PAT-0112</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:12px">Dr. Tazi</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">11:15</td>
+              <td><span class="status-pill status-confirmed">Confirmé</span></td>
+            </tr>
+            <tr class="appt-row">
+              <td>
+                <div class="patient-cell">
+                  <div class="mini-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">FZ</div>
+                  <div>
+                    <div class="patient-name">Fatima Zahra</div>
+                    <div class="patient-id">#PAT-0067</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:12px">Dr. Benali</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">14:00</td>
+              <td><span class="status-pill status-cancelled">Annulé</span></td>
+            </tr>
+            <tr class="appt-row">
+              <td>
+                <div class="patient-cell">
+                  <div class="mini-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626)">YB</div>
+                  <div>
+                    <div class="patient-name">Youssef Bakkali</div>
+                    <div class="patient-id">#PAT-0154</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:12px">Dr. Hajji</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">15:30</td>
+              <td><span class="status-pill status-pending">En attente</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Activity + Progress -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <!-- Activity feed -->
+        <div class="card" style="flex:1">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Activité récente</div>
+              <div class="card-sub">Dernières actions</div>
+            </div>
+          </div>
+          <div class="activity-feed">
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--accent3)"></div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Nouveau patient</strong> — Karim Alaoui inscrit</div>
+                <div class="activity-time">Il y a 5 min</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--accent)"></div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>RDV confirmé</strong> — Mohammed Ouali · Dr. Tazi</div>
+                <div class="activity-time">Il y a 18 min</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--accent4)"></div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Ordonnance</strong> — Mise à jour dossier #PAT-0089</div>
+                <div class="activity-time">Il y a 34 min</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--danger)"></div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>RDV annulé</strong> — Fatima Zahra · 14h00</div>
+                <div class="activity-time">Il y a 1h 12min</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Taux occupation -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Taux d'occupation</div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header">
+              <span style="font-size:13px">Cardiologie</span>
+              <span class="progress-pct">87%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:87%;background:linear-gradient(90deg,var(--accent),#0099cc)"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header">
+              <span style="font-size:13px">Neurologie</span>
+              <span class="progress-pct">64%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:64%;background:linear-gradient(90deg,var(--accent2),#a855f7)"></div>
+            </div>
+          </div>
+          <div class="progress-item" style="margin-bottom:0">
+            <div class="progress-header">
+              <span style="font-size:13px">Pédiatrie</span>
+              <span class="progress-pct">52%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:52%;background:linear-gradient(90deg,var(--accent3),#059669)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clockDisplay').textContent =
+      now.toLocaleTimeString('fr-FR');
+    document.getElementById('dateDisplay').textContent =
+      now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Animate KPIs
+  function animateCounter(el, target, duration = 1200) {
+    let start = 0;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(ease * target);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(step);
+  }
+
+  setTimeout(() => {
+    animateCounter(document.getElementById('kpi1'), 1247);
+    animateCounter(document.getElementById('kpi2'), 38);
+    animateCounter(document.getElementById('kpi3'), 24);
+    animateCounter(document.getElementById('kpi4'), 7);
+  }, 300);
+
+  // Bar chart
+  const data = [
+    { label: 'Lun', confirmed: 18, cancelled: 3 },
+    { label: 'Mar', confirmed: 22, cancelled: 2 },
+    { label: 'Mer', confirmed: 15, cancelled: 5 },
+    { label: 'Jeu', confirmed: 26, cancelled: 1 },
+    { label: 'Ven', confirmed: 20, cancelled: 4 },
+    { label: 'Sam', confirmed: 12, cancelled: 2 },
+    { label: 'Dim', confirmed: 8, cancelled: 0 },
+  ];
+  const maxVal = Math.max(...data.map(d => d.confirmed + d.cancelled));
+  const chartEl = document.getElementById('barChart');
+
+  data.forEach(d => {
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+
+    const barA = document.createElement('div');
+    barA.className = 'bar bar-a';
+    barA.style.height = '0px';
+    barA.title = `Confirmés: ${d.confirmed}`;
+    setTimeout(() => {
+      barA.style.transition = 'height 0.8s cubic-bezier(0.34,1.56,0.64,1)';
+      barA.style.height = (d.confirmed / maxVal * 130) + 'px';
+    }, 400);
+
+    const barB = document.createElement('div');
+    barB.className = 'bar bar-b';
+    barB.style.height = '0px';
+    barB.title = `Annulés: ${d.cancelled}`;
+    setTimeout(() => {
+      barB.style.transition = 'height 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.1s';
+      barB.style.height = (d.cancelled / maxVal * 130) + 'px';
+    }, 400);
+
+    wrap.appendChild(barA);
+    wrap.appendChild(barB);
+
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+    label.textContent = d.label;
+
+    group.appendChild(wrap);
+    group.appendChild(label);
+    chartEl.appendChild(group);
+  });
+</script>
+</body>
+</html>

@@ -1,14 +1,20 @@
+<<<<<<< HEAD
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject, interval, takeUntil, switchMap } from 'rxjs';
 import { SensorService } from '../../../core/services/sensor.service';
 import { AiService } from '../../../core/services/ai.service';
 import { Sensor, Alert, ComfortScore, EnergyForecast } from '../../../core/models';
+=======
+import { Component, OnInit } from '@angular/core';
+import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
+<<<<<<< HEAD
 export class DashboardComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
@@ -106,5 +112,49 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+=======
+export class DashboardComponent implements OnInit {
+
+  stats = {
+    totalPatients: 1247,
+    totalDoctors: 38,
+    todayAppointments: 0,
+    pendingAppointments: 0
+  };
+
+  recentAppointments: Appointment[] = [];
+  isLoading = true;
+
+  constructor(private appointmentService: AppointmentService) {}
+
+  ngOnInit(): void {
+    this.loadDashboard();
+  }
+
+  loadDashboard(): void {
+    this.appointmentService.getAll().subscribe({
+      next: (appointments) => {
+        this.recentAppointments = appointments.slice(0, 5);
+        this.stats.pendingAppointments = appointments
+          .filter(a => a.status === 'PENDING').length;
+        this.isLoading = false;
+      },
+      error: () => { this.isLoading = false; }
+    });
+
+    this.appointmentService.getTodayCount().subscribe({
+      next: (count) => this.stats.todayAppointments = count
+    });
+  }
+
+  getStatusClass(status: string): string {
+    const classes: Record<string, string> = {
+      CONFIRMED: 'status-confirmed',
+      PENDING: 'status-pending',
+      CANCELLED: 'status-cancelled',
+      COMPLETED: 'status-completed'
+    };
+    return classes[status] || '';
+>>>>>>> a81f6ecf5531c3fbb2c553b1d98bfb2545958477
   }
 }
